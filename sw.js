@@ -1,5 +1,5 @@
 // Shogun's Gate offline helper. VERSION changes with every build so updates arrive on their own.
-const VERSION = 'sg-6892b01d0b85';
+const VERSION = 'sg-5bffd1a986fe';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
