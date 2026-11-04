@@ -1,5 +1,5 @@
 // Shogun's Gate offline helper. VERSION changes with every build so updates arrive on their own.
-const VERSION = 'sg-aa655d1b9c51';
+const VERSION = 'sg-bfe34589b467';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -18,12 +18,17 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (url.origin === location.origin) {
     // The game page: try the network first so updates land, fall back to the saved copy when offline.
-    if (req.mode === 'navigate' || url.pathname.endsWith('/index.html')) {
+    // Only the game page itself may become the saved offline copy. (Before this fix, opening ANY page on the
+    // site replaced the saved game with that page.)
+    const scopePath = new URL(self.registration.scope).pathname;
+    const isGame = url.pathname === scopePath || url.pathname === scopePath + 'index.html';
+    if (isGame) {
       e.respondWith(withTimeout(fetch(req, {cache:'no-store'}), 5000)
-        .then(res => { if (res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put('index.html', copy)); } return res; })
+        .then(res => { if (res.ok && res.type === 'basic') { const copy = res.clone(); caches.open(VERSION).then(c => c.put('index.html', copy)); } return res; })
         .catch(() => caches.match('index.html')));
       return;
     }
+    if (req.mode === 'navigate') { e.respondWith(fetch(req).catch(() => caches.match('index.html'))); return; }
     e.respondWith(caches.match(req).then(hit => hit || fetch(req)));
     return;
   }
